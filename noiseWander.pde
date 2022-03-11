@@ -1,114 +1,83 @@
-float noiseScale = 0.01;
-float lh = 135;
-float rh = 175;
-float lrange = 40;
-
-
+float noiseScale;
+int lh = 135;
+int rh = 175;
+int lrange = 60;
 int numAgents = 5000;
 PGraphics agentLayer;
 PGraphics bgLayer;
+float radius;
 Agent[] agents;
 PVector center;
+int iterations = 200;
+int seed;
 
-Agent onDisk() {
-  float r =  lerp(0, width / 2.5, pow(cos(random(1)), 4));
-  float theta = random(TAU);
-  float ax = r * sin(theta) + width / 2;
-  float ay = r * cos(theta) + height / 2;
-  return new Agent(ax, ay);
-}
-
-Agent uniform() {
-  float x = random(width);
-  float y = random(height);
-  return new Agent(x, y);
-}
-
-void setup() {
-  size(1200, 1200);
-  smooth(10);
-  center = new PVector(width / 2, height / 2);
-  ///background(255);
-  background(0);
-  //blendMode(SCREEN);
-  bgLayer = createGraphics(width, height);
+void bgNoise() {
   bgLayer.beginDraw();
   bgLayer.loadPixels();
   for (int r = 0; r < width; r++) {
     for (int c = 0; c < height; c++) {
       float x = r * noiseScale;
       float y = c * noiseScale;
-      float baseN = noise(x,y);
-      //baseN = pow(baseN * 2 - 1, 1/1.2) + 1;
-      //baseN /= 2;
+      float baseN = noise(x, y);
       int n = (int)map(baseN, 0, 1, 0, 255);
-
       bgLayer.pixels[r * width + c] = color(n);
     }
   }
   bgLayer.updatePixels();
   bgLayer.endDraw();
-  lh = random(360);
+}
+
+Agent[] phyllotaxis() {
+  agents = new Agent[numAgents];
+  float disp = radius / agents.length;
+  float theta = 0;
+  for (int i = 0; i < agents.length; i++, theta += 137.5) {
+    float ax = (i * disp) * sin(theta) + width / 2;
+    float ay = (i * disp) * cos(theta) + height / 2;
+    agents[i] = new Agent(ax, ay);
+  }
+  return agents;
+}
+
+void setup() {
+  size(1000, 1000);
+  background(0);
+  smooth(10);
+  seed = (int)random(5000);
+  randomSeed(seed);
+
+  center = new PVector(width / 2, height / 2);
+  radius = width / 2.5;
+  noiseScale = 0.01 + map(random(1), 0, 1, -0.02, 0.02);
+  lh = (int) random(360);
   rh = (lh + lrange) % 360;
 
-  agents = new Agent[numAgents];
-  for (int i = 0; i < numAgents; i++) {
-    agents[i] = onDisk();
-  }
+  bgLayer = createGraphics(width, height);
   agentLayer = createGraphics(width, height);
+
+  agents = phyllotaxis();
 }
 
 void draw() {
-  println(frameCount);
-  boolean revive = false;
-  if (revive) {
-    push();
-    noStroke();
-    fill(0, 8);
-    rect(0, 0, width, height);
-    pop();
-  }
+  for (int iter = 0; iter < iterations; iter++) {
 
-  //translate(width/2, height/2);
-  boolean active = false;
-  agentLayer.beginDraw();
-  agentLayer.loadPixels();
-  bgLayer.beginDraw();
-  bgLayer.loadPixels();
-  for (int i = 0; i < agents.length; i++) {
-    Agent agent = agents[i];
-    if (agent.alive) {
-      active = true;
-      agent.update();
-      agent.show(agentLayer);
-    } else {
-      if (revive) {
-        agents[i] = onDisk();
+    bgLayer.beginDraw();
+    bgLayer.loadPixels();
+    println(iter);
+    agentLayer.beginDraw();
+    agentLayer.loadPixels();
+    for (int i = 0; i < agents.length; i++) {
+      Agent a = agents[i];
+      if (a.alive) {
+        a.update();
+        a.show(agentLayer);
       }
     }
+    agentLayer.endDraw();
+    bgLayer.endDraw();
+    image(bgLayer, 0, 0);
+    image(agentLayer, 0, 0);
   }
-  agentLayer.endDraw();
-  bgLayer.endDraw();
-  //image(bgLayer, 0, 0);
-  image(agentLayer, 0, 0);
-  if (!active) {
-    //flood();
-    saveFrame();
-    noLoop();
-  }
-  if ((frameCount - 3) % 50 == 0) {
-    saveFrame(String.format("%d_####.tif", (int)lh));
-  }
-  
-  //if (frameCount > 5){
-  // noLoop();
-  //}
-}
-
-void keyPressed()
-{
-  if (key == 'a') {
-    println("!");
-    saveFrame();
-  }
+  saveFrame(String.format("out2/%d-####.tif", seed));
+  noLoop();
 }

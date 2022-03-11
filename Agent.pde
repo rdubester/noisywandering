@@ -10,26 +10,15 @@ class Agent {
   Agent(float x, float y) {
     this.pos = new PVector(x, y);
     this.prevPos = pos.copy();
-    //this.c = color(map(random(1), 0, 1, 0, 50));
-    //this.c = color(map(random(1), 0, 1, 20, 255));
 
     colorMode(HSB, 360.0);
     float h = map(random(1), 0, 1, lh, rh);
-    float b = map(random(1), 0, 1, 0, 360);
+    float b = map(easeInOutQuad(random(1)), 0, 1, 0, 360);
     if (random(1) < 0.1) {
-      h = (h + 120) % 360;
+      h = (h + 40) % 360;
     }
-    //} else if (random(1) < 0.11){
-    //  h = (h - 120) % 360;
-    //}
     this.c = color(h, 360, b);
     colorMode(RGB, 255);
-    //colorMode(HSB, 1.0);
-    //this.c = color(map(random(1), 0, 1, 0.3, 1), 1, 1);
-    //colorMode(RGB, 255);
-
-
-    //this.c = color(0, 0, map(random(1), 0, 1, 0.9, 1));
   }
 
   float step_speed(int attempt, int max_attempts) {
@@ -107,7 +96,7 @@ class Agent {
           collision = true;
           break;
         }
-        if (PVector.sub(center, candidate).mag() > width / 2.5) {
+        if (PVector.sub(center, candidate).mag() > radius) {
           collision = true;
           break;
         }
